@@ -40,6 +40,9 @@ class QLENode():
 		self.flag = {}
 		self.port = {}
 		
+		to_print = "n = {}".format(self.n)
+		print(to_print)
+		
 		# Calculate neighbour nodes id
 		self.otherNodes = []
 		n = 1
@@ -138,6 +141,7 @@ class QLENode():
 							# wait to finish
 							wait = True
 							while wait:
+								time.sleep(2)
 								if (self.counter2):
 									wait = False
 							self.counter2 = 0
@@ -153,6 +157,7 @@ class QLENode():
 				# wait all to finish
 				wait = True
 				while wait:
+					time.sleep(2)
 					if (self.counter3 == self.n-1):
 						wait = False
 				self.counter3 = 0
@@ -167,15 +172,19 @@ class QLENode():
 				for i in range(1, self.n):
 					aq0 = qubit(self.node)
 					apply1_o(q0, q1, self.reg[t][i][0], self.reg[t][i][1], aq0)
+					to_print = "{} apply1_o() done".format(self.myself)
+					print(to_print)
 					q0 = aq0
 					aq1 = qubit(self.node)
 					apply2_o(q0, q1, self.reg[t][i][0], self.reg[t][i][1], qubit(self.node), qubit(self.node), aq1)
+					to_print = "{} apply2_o() done".format(self.myself)
+					print(to_print)
 					q1 = aq1
-				self.reg[t+1][0][0].append(q0)
-				self.reg[t+1][0][1].append(q1)
+				self.reg[t+1].append(q0)
+				self.reg[t+1].append(q1)
 			# judge
 			# flip the content of Y if R0(n) is "x"
-			toffoli(self.reg[self.n-1][0][0], self.reg[self.n-1][0][1], regY)
+			toffoli(self.reg[self.n-1][0], self.reg[self.n-1][1], regY)
 			# measure the qubit in Y in the {|"consistent">,|"inconsistent">} basis to get an outcome y
 			y = regY.measure()
 			if (y == 1 and self.status == 'eligible'):
@@ -211,6 +220,7 @@ class QLENode():
 			# wait z value from all the parties
 			wait = True
 			while wait:
+				time.sleep(2)
 				if (self.counter == self.n-1):
 					wait = False
 			self.zValues.append(self.z)
@@ -240,17 +250,29 @@ class QLENode():
 			#print(to_print)
 			
 			if (msg == "start"):
+				to_print = "{}, received start msg".format(self.myself)
+				print(to_print)
 				tComm = Thread(target=self.startCommHandler, args=(node, reg, t, n, otherNodes, otherNodesId, flag, port, sender))
 				tComm.start()
 			elif (msg == "busy"):
+				to_print = "{}, received busy msg".format(self.myself)
+				print(to_print)
 				flag[int(sender)] = 'BUSY'
 			elif (msg == "end_busy"):
+				to_print = "{}, received end busy msg".format(self.myself)
+				print(to_print)
 				flag[int(sender)] = 'READY'
 			elif (msg == "ack"):
+				to_print = "{}, received ack msg".format(self.myself)
+				print(to_print)
 				tComm = Thread(target=self.ackCommHandler, args=(node, reg, t, n, otherNodes, otherNodesId, flag, port, sender))
 				tComm.start()
 			elif (msg == "finish"):
+				to_print = "{}, received finish msg".format(self.myself)
+				print(to_print)
 				self.counter3 += 1
+				if (self.counter3 == self.n-1):
+					break
 	
 	
 	####################################
@@ -258,6 +280,8 @@ class QLENode():
 	#  thread to manage 'start' message
 	#
 	def startCommHandler(self, node, reg, t, n, otherNodes, otherNodesId, flag, port, sender):
+		to_print = "{}, startCommHandler".format(self.myself)
+		print(to_print)
 		regSup = []
 		flag[int(sender)] = 'DONE'
 		for i in range(0, self.n-1):
@@ -278,6 +302,8 @@ class QLENode():
 		node.sendQubit(reg[t][port[int(sender)]][0], 'node'+sender)
 		time.sleep(0.2)
 		node.sendQubit(reg[t][port[int(sender)]][1], 'node'+sender)
+		to_print = "{}, sent qubits at startCommHandler".format(self.myself)
+		print(to_print)
 		reg[t][port[int(sender)]][0] = regSup[0]
 		reg[t][port[int(sender)]][1] = regSup[1]
 		for i in range(0, self.n-1):
@@ -354,7 +380,7 @@ def main():
 	# Node id
 	myid = int(sys.argv[1])
 	# Number of nodes
-	n = 4
+	n = 3
 	qlenode = QLENode(myid, n)
 	
 	
