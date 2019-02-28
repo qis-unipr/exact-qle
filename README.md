@@ -16,7 +16,7 @@ Implementation of the exact quantum leader election algorithm proposed by [Tani 
 
   Please refer to the [Qiskit Tutorials](https://github.com/Qiskit/qiskit-tutorials/blob/master/INSTALL.md) page for installation instructions.
 
-### Installing
+## Installing
 
 1. Clone the QLE folder in: *SimulaQron/examples/cdc/pythonLib*.
 
@@ -26,6 +26,8 @@ Implementation of the exact quantum leader election algorithm proposed by [Tani 
    - *virtualNodes.cfg*
 
    in order to set the number of virtual nodes and CQC servers (node0, node1, node2, ...).
+   
+   Note: you also need to set the number of nodes using the 'n' variable in the main function of the *qlenode.py* file.
    
    In the same folder edit the *settings.ini* file in order to set the maximum number of qubits per node. For example:
    ```
