@@ -7,6 +7,8 @@ Implementation of the exact quantum leader election algorithm proposed by [Tani 
 * [SimulaQron](http://www.simulaqron.org/)
 
   Please refer to the [Getting started](https://softwarequtech.github.io/SimulaQron/html/GettingStarted.html) page for installation instructions.
+  
+  Tested with the Develop version.
 
 * [ProjectQ](https://projectq.ch/)
 
@@ -18,7 +20,7 @@ Implementation of the exact quantum leader election algorithm proposed by [Tani 
 
 ## Installing
 
-1. Clone the QLE folder in: *SimulaQron/examples/cdc/pythonLib*.
+1. Clone the *exact-qle* folder in: *SimulaQron/examples/cdc/pythonLib*.
 
 2. Enter in: *SimulaQron/config* and edit the following files:
    - *appNodes.cfg*
@@ -46,6 +48,6 @@ Implementation of the exact quantum leader election algorithm proposed by [Tani 
 
 2. Open a second shell and execute:
    ```
-   cd examples/cqc/pythonLib/QLE
+   cd examples/cqc/pythonLib/exact-qle
    sh run.sh
    ```

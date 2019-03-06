@@ -380,7 +380,7 @@ def main():
 	# Node id
 	myid = int(sys.argv[1])
 	# Number of nodes
-	n = 2
+	n = int(sys.argv[2])
 	qlenode = QLENode(myid, n)
 	
 	
