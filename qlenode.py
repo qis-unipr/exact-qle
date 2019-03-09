@@ -25,7 +25,7 @@ from functions import *
 #
 
 class QLENode():
-	
+
 	def __init__(self, myid, n):
 		self.myid = myid
 		self.myself = 'node'+str(myid)
@@ -39,10 +39,10 @@ class QLENode():
 		self.reg = []
 		self.flag = {}
 		self.port = {}
-		
+
 		to_print = "n = {}".format(self.n)
 		print(to_print)
-		
+
 		# Calculate neighbour nodes id
 		self.otherNodes = []
 		n = 1
@@ -51,24 +51,24 @@ class QLENode():
 				self.otherNodes.append('node'+str(i))
 				self.port[i] = n
 				n += 1
-				
+
 		self.otherNodesId = []
 		for i in range(0, self.n):
 			if self.myid != i:
 				self.otherNodesId.append(i)
-				
+
 		# Initialize flag dictionary
 		for i in range(0, self.n-1):
 			self.flag[self.otherNodesId[i]] = 'READY'
-		
+
 		# Initialize the CQC connection
 		with CQCConnection(self.myself) as self.node:
-			
+
 			# Start local processing loop
 			self.localProcessing()
-		
-		
-		
+
+
+
 	###################################
 	#
 	#  processing loop
@@ -89,115 +89,12 @@ class QLENode():
 				regX0.H()
 			# perform CONSISTENCY with X0, Y, status and n
 			# prepare two-qubit quantum registers R0(1),...,Rn-1(1),...,R0(n-1),...,Rn-1(n-1),R0(n)
-			self.reg.clear()
-			# Ri(t) is reg[t][i]
-			# reg[t][i][0] is the first qubit
-			# reg[t][i][1] is the second qubit
-			for j in range(0, self.n):
-				self.reg.append([])
-				if not j == self.n-1:
-					for z in range(0, self.n):
-						self.reg[j].append([])
-			# initialize R1(t),...,Rn-1(t) with |00>
-			for t in range(0, self.n-1):
-				for i in range(1, self.n):
-					self.reg[t][i].append(qubit(self.node))
-					self.reg[t][i].append(qubit(self.node))
-			# local initialization
-			# N.B. R0(1) of the paper here is R0(0)=reg[0][0]
-			if self.status == 'ineligible':
-				self.reg[0][0].append(qubit(self.node))
-				self.reg[0][0].append(qubit(self.node).X())
-			else:
-				# create superposition between X0 and R0(1)
-				self.reg[0][0].append(regX0)
-				q1 = qubit(self.node)
-				regX0.cnot(q1)
-				self.reg[0][0].append(q1)
-			# computing fo
-			for t in range(0, self.n-1):
-				# copy the content of R0(t) to the content of each of R1(t),...,Rn-1(t)
-				for i in range(1, self.n):
-					self.reg[t][0][0].cnot(self.reg[t][i][0])
-					self.reg[t][0][1].cnot(self.reg[t][i][1])
-				self.counter2 = 0
-				tComm = Thread(target=self.listenReg, args=(self.node, self.reg, t, self.n, self.otherNodes, self.otherNodesId, self.flag, self.port))
-				tComm.start()
-				wt = randint(1, 10)
-				time.sleep(wt)
-				# exchange the qubits in Ri(t)
-				for i in range(1, self.n):
-					if (self.flag[self.otherNodesId[i-1]] == 'DONE'):
-						continue
-					loop = True
-					while loop:
-						wt = randint(2, 8)
-						time.sleep(wt)
-						if (self.flag[self.otherNodesId[i-1]] == 'READY'):
-							print("--------------------------------------")
-							to_print = "{} sending start to {}".format(self.myself, self.otherNodes[i-1])
-							print(to_print)
-							self.node.sendClassical(self.otherNodes[i-1], str.encode(str(self.myid)+":start"))
-							# wait to finish
-							wait = True
-							while wait:
-								time.sleep(2)
-								if (self.counter2):
-									wait = False
-							self.counter2 = 0
-						elif (self.flag[self.otherNodesId[i-1]] == 'BUSY'):
-							wt = randint(5, 10)
-							time.sleep(wt)
-						elif (self.flag[self.otherNodesId[i-1]] == 'DONE'):
-							loop = False
-				
-				for i in range(0, self.n-1):
-					self.node.sendClassical(self.otherNodes[i], str.encode(str(self.myid)+":finish"))
-					
-				# wait all to finish
-				wait = True
-				while wait:
-					time.sleep(2)
-					if (self.counter3 == self.n-1):
-						wait = False
-				self.counter3 = 0
-				
-				to_print = "{} starting 'o' function".format(self.myself)
-				print(to_print)
-				
-				# set the content of R0(t+1) to r0(t) o r1(t) o ... o rn-1(t)
-				# where ri(t) is the content of Ri(t) for 0 <= i <= n-1
-				q0 = self.reg[t][0][0]
-				q1 = self.reg[t][0][1]
-				for i in range(1, self.n):
-					aq0 = qubit(self.node)
-					apply1_o(q0, q1, self.reg[t][i][0], self.reg[t][i][1], aq0)
-					to_print = "{} apply1_o() done".format(self.myself)
-					print(to_print)
-					q0 = aq0
-					aq1 = qubit(self.node)
-					apply2_o(q0, q1, self.reg[t][i][0], self.reg[t][i][1], qubit(self.node), qubit(self.node), aq1)
-					to_print = "{} apply2_o() done".format(self.myself)
-					print(to_print)
-					q1 = aq1
-				self.reg[t+1].append(q0)
-				self.reg[t+1].append(q1)
-			# judge
-			# flip the content of Y if R0(n) is "x"
-			toffoli(self.reg[self.n-1][0], self.reg[self.n-1][1], regY)
+			regX0, regY = self.consistency(regX0, regY)
 			# measure the qubit in Y in the {|"consistent">,|"inconsistent">} basis to get an outcome y
 			y = regY.measure()
 			if (y == 1 and self.status == 'eligible'):
 				# perform BREAK_SIMMETRY with X0, X1 and k
-				if k%2 == 0:
-					# apply the tensor products between Uk and I to the qubits in X0 and X1
-					Uk(k, regX0)
-				else:
-					# copy the content of X0 to that of X1
-					# i.e., apply CNOT to the qubit in X1 with the control qubit in X0
-					regX0.cnot(regX1)
-					# apply Vk to the qubits in X0 and X1
-					Vk(k, regX0, regX1)
+				regX0, regX1 = self.break_simmetry(regX0, regX1, k)
 			if self.status == 'eligible':
 				# measure the qubit in Xi in the {|0>,|1>} basis to get an outcome xi for each i in {0,1}
 				x0 = regX0.measure()
@@ -209,32 +106,164 @@ class QLENode():
 				self.z = -1
 			# perform FIND_MAX with z and n to know the maximum value zmax of z over all parties
 			# send z value to all the parties
-			print("Executing FIND_MAX")
-			self.zValues.clear()
-			self.counter = 0
-			tComm = Thread(target=self.listen, args=(self.node, self.zValues, self.n))
-			tComm.start()
-			for i in range(len(self.otherNodes)):
-				self.node.sendClassical(self.otherNodes[i], str.encode(self.myself+":z:"+str(self.z)))
-				time.sleep(1)
-			# wait z value from all the parties
-			wait = True
-			while wait:
-				time.sleep(2)
-				if (self.counter == self.n-1):
-					wait = False
-			self.zValues.append(self.z)
-			#to_print = "Node {} = {}".format(self.myid, self.zValues)
-			#print(to_print)
-			# get the maximum value zmax of z over all parties
-			zmax = max(self.zValues)
+			zmax = self.find_max()
 			if self.z != zmax:
 				self.status = 'ineligible'
 			# output status
 			to_print = "Output status of {} is {}".format(self.node.name, self.status)
 			print(to_print)
-			
-	
+
+	####################################
+	#
+	#  CONSISTENCY
+	#  Input: single-qubit registers X0 and Y
+	#  Output: single-qubit registers X0 and Y
+	#
+	def consistency(self, regX0, regY):
+		print("Executing CONSISTENCY")
+		self.reg.clear()
+		# Ri(t) is reg[t][i]
+		# reg[t][i][0] is the first qubit
+		# reg[t][i][1] is the second qubit
+		for j in range(0, self.n):
+			self.reg.append([])
+			if not j == self.n-1:
+				for z in range(0, self.n):
+					self.reg[j].append([])
+		# initialize R1(t),...,Rn-1(t) with |00>
+		for t in range(0, self.n-1):
+			for i in range(1, self.n):
+				self.reg[t][i].append(qubit(self.node))
+				self.reg[t][i].append(qubit(self.node))
+		# local initialization
+		# N.B. R0(1) of the paper here is R0(0)=reg[0][0]
+		if self.status == 'ineligible':
+			self.reg[0][0].append(qubit(self.node))
+			self.reg[0][0].append(qubit(self.node).X())
+		else:
+			# create superposition between X0 and R0(1)
+			self.reg[0][0].append(regX0)
+			q1 = qubit(self.node)
+			regX0.cnot(q1)
+			self.reg[0][0].append(q1)
+		# computing fo
+		for t in range(0, self.n-1):
+			# copy the content of R0(t) to the content of each of R1(t),...,Rn-1(t)
+			for i in range(1, self.n):
+				self.reg[t][0][0].cnot(self.reg[t][i][0])
+				self.reg[t][0][1].cnot(self.reg[t][i][1])
+			self.counter2 = 0
+			tComm = Thread(target=self.listenReg, args=(self.node, self.reg, t, self.n, self.otherNodes, self.otherNodesId, self.flag, self.port))
+			tComm.start()
+			wt = randint(1, 10)
+			time.sleep(wt)
+			# exchange the qubits in Ri(t)
+			for i in range(1, self.n):
+				if (self.flag[self.otherNodesId[i-1]] == 'DONE'):
+					continue
+				loop = True
+				while loop:
+					wt = randint(2, 8)
+					time.sleep(wt)
+					if (self.flag[self.otherNodesId[i-1]] == 'READY'):
+						print("--------------------------------------")
+						to_print = "{} sending start to {}".format(self.myself, self.otherNodes[i-1])
+						print(to_print)
+						self.node.sendClassical(self.otherNodes[i-1], str.encode(str(self.myid)+":start"))
+						# wait to finish
+						wait = True
+						while wait:
+							time.sleep(2)
+							if (self.counter2):
+								wait = False
+						self.counter2 = 0
+					elif (self.flag[self.otherNodesId[i-1]] == 'BUSY'):
+						wt = randint(5, 10)
+						time.sleep(wt)
+					elif (self.flag[self.otherNodesId[i-1]] == 'DONE'):
+						loop = False
+
+			for i in range(0, self.n-1):
+				self.node.sendClassical(self.otherNodes[i], str.encode(str(self.myid)+":finish"))
+
+			# wait all to finish
+			wait = True
+			while wait:
+				time.sleep(2)
+				if (self.counter3 == self.n-1):
+					wait = False
+			self.counter3 = 0
+
+			to_print = "{} starting 'o' function".format(self.myself)
+			print(to_print)
+
+			# set the content of R0(t+1) to r0(t) o r1(t) o ... o rn-1(t)
+			# where ri(t) is the content of Ri(t) for 0 <= i <= n-1
+			q0 = self.reg[t][0][0]
+			q1 = self.reg[t][0][1]
+			for i in range(1, self.n):
+				aq0 = qubit(self.node)
+				apply1_o(q0, q1, self.reg[t][i][0], self.reg[t][i][1], aq0)
+				to_print = "{} apply1_o() done".format(self.myself)
+				print(to_print)
+				q0 = aq0
+				aq1 = qubit(self.node)
+				apply2_o(q0, q1, self.reg[t][i][0], self.reg[t][i][1], qubit(self.node), qubit(self.node), aq1)
+				to_print = "{} apply2_o() done".format(self.myself)
+				print(to_print)
+				q1 = aq1
+			self.reg[t+1].append(q0)
+			self.reg[t+1].append(q1)
+		# judge
+		# flip the content of Y if R0(n) is "x"
+		toffoli(self.reg[self.n-1][0], self.reg[self.n-1][1], regY)
+		return regX0, regY
+
+	####################################
+	#
+	#  BREAK_SIMMETRY
+	#  Input: single-qubit registers X0 and X1, and positive integer k
+	#  Output: single-qubit registers X0 and X1
+	#
+	def break_simmetry(self, regX0, regX1, k):
+		print("Executing BREAK_SIMMETRY")
+		if k%2 == 0:
+			# apply the tensor products between Uk and I to the qubits in X0 and X1
+			Uk(k, regX0)
+		else:
+			# copy the content of X0 to that of X1
+			# i.e., apply CNOT to the qubit in X1 with the control qubit in X0
+			regX0.cnot(regX1)
+			# apply Vk to the qubits in X0 and X1
+			Vk(k, regX0, regX1)
+		return regX0, regX1
+
+	####################################
+	#
+	#  FIND_MAX
+	#  Output: max z over all parties
+	def find_max(self):
+		print("Executing FIND_MAX")
+		self.zValues.clear()
+		self.counter = 0
+		tComm = Thread(target=self.listen, args=(self.node, self.zValues, self.n))
+		tComm.start()
+		for i in range(len(self.otherNodes)):
+			self.node.sendClassical(self.otherNodes[i], str.encode(self.myself+":z:"+str(self.z)))
+			time.sleep(1)
+		# wait z value from all the parties
+		wait = True
+		while wait:
+			time.sleep(2)
+			if (self.counter == self.n-1):
+				wait = False
+		self.zValues.append(self.z)
+		#to_print = "Node {} = {}".format(self.myid, self.zValues)
+		#print(to_print)
+		# get the maximum value zmax of z over all parties
+		zmax = max(self.zValues)
+		return zmax
+
 	####################################
 	#
 	#  listening loop (starting message handling in a separate thread)
@@ -245,10 +274,10 @@ class QLENode():
 			content = data.decode().split(":")
 			sender = content[0]
 			msg = content[1]
-			
+
 			#to_print = "{} received {} from node{}".format(self.myself, msg, sender)
 			#print(to_print)
-			
+
 			if (msg == "start"):
 				to_print = "{}, received start msg".format(self.myself)
 				print(to_print)
@@ -273,8 +302,8 @@ class QLENode():
 				self.counter3 += 1
 				if (self.counter3 == self.n-1):
 					break
-	
-	
+
+
 	####################################
 	#
 	#  thread to manage 'start' message
@@ -311,12 +340,12 @@ class QLENode():
 				to_print = "{} sending end_busy to {}".format(self.myself, otherNodes[i])
 				print(to_print)
 				node.sendClassical(otherNodes[i], str.encode(str(self.myid)+":end_busy"))
-				
-	
+
+
 	####################################
 	#
 	#  thread to manage 'ack' message
-	#		
+	#
 	def ackCommHandler(self, node, reg, t, n, otherNodes, otherNodesId, flag, port, sender):
 		for i in range(0, self.n-1):
 			if (flag[int(otherNodesId[i])] == 'READY' and int(otherNodesId[i]) != int(sender)):
@@ -341,8 +370,8 @@ class QLENode():
 				print(to_print)
 				node.sendClassical(otherNodes[i], str.encode(str(self.myid)+":end_busy"))
 		self.counter2 = 1
-	
-	
+
+
 	####################################
 	#
 	#  listening loop (starting message handling in a separate thread)
@@ -355,25 +384,25 @@ class QLENode():
 			msg = content[1]
 			to_print = "App {}: received message '{}' from: {}".format(node.name, msg, sender)
 			print(to_print)
-			
+
 			if (msg == 'z'):
 				z = int(content[2])
 				zVal.append(z)
 				to_print = "z = {} arrived from {} has been appended.".format(z, sender)
 				print(to_print)
 				self.counter += 1
-			
+
 			if self.counter == n-1:
 				break
-			
-			
+
+
 
 ##############################
 #
-# main   
+# main
 #
 def main():
-	
+
 	print('Number of arguments:', len(sys.argv), 'arguments.')
 	print('Argument List:', str(sys.argv))
 
@@ -382,7 +411,7 @@ def main():
 	# Number of nodes
 	n = int(sys.argv[2])
 	qlenode = QLENode(myid, n)
-	
-	
-##############################		
+
+
+##############################
 main()
