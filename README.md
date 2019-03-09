@@ -29,7 +29,7 @@ Implementation of the exact quantum leader election algorithm proposed by [Tani 
 
    in order to set the number of virtual nodes and CQC servers (node0, node1, node2, ...).
    
-   Note: you also need to set the number of nodes using the 'n' variable in the main function of the *qlenode.py* file.
+   Note: you also need to set the nodes in the *myStarter.sh* and *run.sh* files.
    
    In the same folder edit the *settings.ini* file in order to set the maximum number of qubits per node. For example:
    ```
