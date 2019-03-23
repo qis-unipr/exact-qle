@@ -63,7 +63,6 @@ class QLENode():
 
 		# Initialize the CQC connection
 		with CQCConnection(self.myself) as self.node:
-
 			# Start local processing loop
 			self.localProcessing()
 
@@ -88,7 +87,6 @@ class QLENode():
 				# prepare the state (|0>+|1>)/sqrt(2) in X0
 				regX0.H()
 			# perform CONSISTENCY with X0, Y, status and n
-			# prepare two-qubit quantum registers R0(1),...,Rn-1(1),...,R0(n-1),...,Rn-1(n-1),R0(n)
 			regX0, regY = self.consistency(regX0, regY)
 			# measure the qubit in Y in the {|"consistent">,|"inconsistent">} basis to get an outcome y
 			y = regY.measure()
@@ -121,32 +119,37 @@ class QLENode():
 	#
 	def consistency(self, regX0, regY):
 		print("Executing CONSISTENCY")
+		# prepare two-qubit quantum registers R0(1),...,Rn-1(1),...,R0(n-1),...,Rn-1(n-1),R0(n)
 		self.reg.clear()
 		# Ri(t) is reg[t][i]
 		# reg[t][i][0] is the first qubit
 		# reg[t][i][1] is the second qubit
-		for j in range(0, self.n):
+		for t in range(0, self.n):
 			self.reg.append([])
-			if not j == self.n-1:
-				for z in range(0, self.n):
-					self.reg[j].append([])
-		# initialize R1(t),...,Rn-1(t) with |00>
-		for t in range(0, self.n-1):
-			for i in range(1, self.n):
+			if not t == self.n:
+				for i in range(0, self.n): # MA: n posti per i, solo se t < n-1
+					self.reg[t].append([])
+		# initialize R1(t),...,Rn-1(t) with |00>, for all t < n-1
+		for t in range(0, self.n):  # qui t va da 0 a n-1 (nel paper da 1 a n)
+			for i in range(0, self.n):
 				self.reg[t][i].append(qubit(self.node))
 				self.reg[t][i].append(qubit(self.node))
-		# local initialization
-		# N.B. R0(1) of the paper here is R0(0)=reg[0][0]
+		# MA: missing the initialization of reg[n-1][0] (R0(n) in the paper)
+		# self.reg[n-1][0].append(qubit(self.node))
+		# self.reg[n-1][0].append(qubit(self.node))
+
+		# local initialization (init)
+		# N.B. R0(1) of the paper here is reg[0][0]
 		if self.status == 'ineligible':
-			self.reg[0][0].append(qubit(self.node))
-			self.reg[0][0].append(qubit(self.node).X())
+			self.reg[0][0][0] = qubit(self.node)
+			self.reg[0][0][1] = qubit(self.node).X()
 		else:
-			# create superposition between X0 and R0(1)
-			self.reg[0][0].append(regX0)
-			q1 = qubit(self.node)
-			regX0.cnot(q1)
-			self.reg[0][0].append(q1)
-		# computing fo
+			# entangle X0 and R0(1)
+			self.reg[0][0][0] = qubit(self.node) # set R0(1)[0] to |0>
+			self.reg[0][0][1] = qubit(self.node) # set R0(1)[1] to |0>
+			regX0.cnot(self.reg[0][0][0])
+
+		# computing fo (comp)
 		for t in range(0, self.n-1):
 			# copy the content of R0(t) to the content of each of R1(t),...,Rn-1(t)
 			for i in range(1, self.n):
@@ -212,11 +215,17 @@ class QLENode():
 				to_print = "{} apply2_o() done".format(self.myself)
 				print(to_print)
 				q1 = aq1
-			self.reg[t+1].append(q0)
-			self.reg[t+1].append(q1)
+			#if (t < self.n-2):
+			to_print = "t = {}".format(t)
+			print(to_print)
+			self.reg[t+1][0][0] = q0
+			self.reg[t+1][0][1] = q1
+			#elif (t == self.n-2):
+				#self.reg[t+1][0].append(q0)
+				#self.reg[t+1][0].append(q1)
 		# judge
 		# flip the content of Y if R0(n) is "x"
-		toffoli(self.reg[self.n-1][0], self.reg[self.n-1][1], regY)
+		toffoli(self.reg[self.n-1][0][0], self.reg[self.n-1][0][1], regY)
 		return regX0, regY
 
 	####################################
