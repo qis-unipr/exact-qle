@@ -1,9 +1,10 @@
 from cmath import exp
 import math
 
-from SimulaQron.general.hostConfig import *
-from SimulaQron.cqc.backend.cqcHeader import *
-from SimulaQron.cqc.pythonLib.cqc import *
+#from SimulaQron.general.hostConfig import *
+#from SimulaQron.cqc.backend.cqcHeader import *
+#from SimulaQron.cqc.pythonLib.cqc import *
+from cqc.pythonLib import *
 
 from gates import *
 

@@ -12,9 +12,11 @@ from time import sleep
 from threading import Thread
 from random import *
 
-from SimulaQron.general.hostConfig import *
-from SimulaQron.cqc.backend.cqcHeader import *
-from SimulaQron.cqc.pythonLib.cqc import *
+#from SimulaQron.general.hostConfig import *
+#from SimulaQron.cqc.backend.cqcHeader import *
+#from SimulaQron.cqc.pythonLib.cqc import *
+
+from cqc.pythonLib import *
 
 from functions import *
 

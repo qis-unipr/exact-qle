@@ -1,15 +1,17 @@
 from cmath import exp
 import math
 
-from qiskit import Aer
+#from qiskit import Aer
 from qiskit.mapper import two_qubit_kak
 import numpy as np
 
 from projectq.setups.decompositions import arb1qubit2rzandry as arb1q
 
-from SimulaQron.general.hostConfig import *
-from SimulaQron.cqc.backend.cqcHeader import *
-from SimulaQron.cqc.pythonLib.cqc import *
+#from SimulaQron.general.hostConfig import *
+#from SimulaQron.cqc.backend.cqcHeader import *
+#from SimulaQron.cqc.pythonLib.cqc import *
+
+from cqc.pythonLib import *
 
 from toffoli import *
 
@@ -134,8 +136,8 @@ def apply1_o(q1, q2, q3, q4, aq):
 	toffoli(q1, q3, aq)
 	aq.X()
 	return
-	
-	
+
+
 ###################################
 #
 #  'o' operator of the fo function (2)
