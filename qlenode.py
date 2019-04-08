@@ -218,7 +218,7 @@ class QLENode():
 				print(to_print)
 				q1 = aq1
 			#if (t < self.n-2):
-			to_print = "t = {}".format(t)
+			#to_print = "t = {}".format(t)
 			print(to_print)
 			self.reg[t+1][0][0] = q0
 			self.reg[t+1][0][1] = q1
@@ -237,7 +237,8 @@ class QLENode():
 	#  Output: single-qubit registers X0 and X1
 	#
 	def break_simmetry(self, regX0, regX1, k):
-		print("Executing BREAK_SIMMETRY")
+		to_print = "{} executes BREAK_SIMMETRY".format(self.myself)
+		print(to_print)
 		if k%2 == 0:
 			# apply the tensor products between Uk and I to the qubits in X0 and X1
 			Uk(k, regX0)
@@ -254,18 +255,19 @@ class QLENode():
 	#  FIND_MAX
 	#  Output: max z over all parties
 	def find_max(self):
-		print("Executing FIND_MAX")
+		to_print = "{} executes FIND_MAX".format(self.myself)
+		print(to_print)
 		self.zValues.clear()
 		self.counter = 0
 		tComm = Thread(target=self.listen, args=(self.node, self.zValues, self.n))
 		tComm.start()
 		for i in range(len(self.otherNodes)):
 			self.node.sendClassical(self.otherNodes[i], str.encode(self.myself+":z:"+str(self.z)))
-			time.sleep(1)
+			time.sleep(0.2)
 		# wait z value from all the parties
 		wait = True
 		while wait:
-			time.sleep(2)
+			time.sleep(0.2)
 			if (self.counter == self.n-1):
 				wait = False
 		self.zValues.append(self.z)
@@ -333,6 +335,7 @@ class QLENode():
 		j = 0
 		while j < 2:
 			try:
+				time.sleep(0.2)
 				regSup.append(node.recvQubit())
 				print("{} received the qubit {} from node{}".format(node.name, j, sender))
 			except CQCTimeoutError:
@@ -363,12 +366,15 @@ class QLENode():
 				to_print = "{} sending busy to {}".format(self.myself, otherNodes[i])
 				print(to_print)
 				node.sendClassical(otherNodes[i], str.encode(str(self.myid)+":busy"))
+		time.sleep(0.2)
 		node.sendQubit(reg[t][port[int(sender)]][0], 'node'+sender)
 		time.sleep(0.2)
 		node.sendQubit(reg[t][port[int(sender)]][1], 'node'+sender)
+		time.sleep(0.2)
 		j = 0
 		while j < 2:
 			try:
+				time.sleep(0.2)
 				reg[t][port[int(sender)]][j] = node.recvQubit()
 				print("{} received the qubit {} from node{}".format(node.name, j, sender))
 			except CQCTimeoutError:
