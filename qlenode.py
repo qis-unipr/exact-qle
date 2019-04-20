@@ -36,6 +36,7 @@ class QLENode():
 		self.counter = 0
 		self.counter2 = 0
 		self.counter3 = 0
+		self.counter4 = 0
 		self.zValues = []
 		self.z = 0
 		self.reg = []
@@ -90,6 +91,7 @@ class QLENode():
 				regX0.H()
 			# perform CONSISTENCY with X0, Y, status and n
 			regX0, regY = self.consistency(regX0, regY)
+			#time.sleep(10) # wait for all nodes to complete consistency
 			# measure the qubit in Y in the {|"consistent">,|"inconsistent">} basis to get an outcome y
 			y = regY.measure()
 			if (y == 1 and self.status == 'eligible'):
@@ -219,15 +221,30 @@ class QLENode():
 				q1 = aq1
 			#if (t < self.n-2):
 			#to_print = "t = {}".format(t)
-			print(to_print)
+			#print(to_print)
 			self.reg[t+1][0][0] = q0
 			self.reg[t+1][0][1] = q1
 			#elif (t == self.n-2):
 				#self.reg[t+1][0].append(q0)
 				#self.reg[t+1][0].append(q1)
+
 		# judge
 		# flip the content of Y if R0(n) is "x"
 		toffoli(self.reg[self.n-1][0][0], self.reg[self.n-1][0][1], regY)
+		to_print = "{} Toffoli done".format(self.myself)
+		print(to_print)
+
+		for i in range(0, self.n-1):
+			self.node.sendClassical(self.otherNodes[i], str.encode(str(self.myid)+":end_consistency"))
+
+		# wait all to complete consistency
+		wait = True
+		while wait:
+			time.sleep(4)
+			if (self.counter4 == self.n-1):
+				wait = False
+		self.counter4 = 0
+
 		return regX0, regY
 
 	####################################
@@ -313,7 +330,11 @@ class QLENode():
 				to_print = "{}, received finish msg".format(self.myself)
 				print(to_print)
 				self.counter3 += 1
-				if (self.counter3 == self.n-1):
+			elif (msg == "end_consistency"):
+				to_print = "{}, received end consistency msg".format(self.myself)
+				print(to_print)
+				self.counter4 += 1
+				if (self.counter4 == self.n-1):
 					break
 
 
