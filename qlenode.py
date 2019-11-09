@@ -206,6 +206,15 @@ class QLENode():
 
 			# set the content of R0(t+1) to r0(t) o r1(t) o ... o rn-1(t)
 			# where ri(t) is the content of Ri(t) for 0 <= i <= n-1
+
+			# In the classical case, f_o is represented by a logic circuit with 4-bit inputs and 2-bit output,
+			# if we encode {0^, 1^, *, x} by the computational basis {00,01,10,11}
+			# (Inputs x and y are each represented two bits).
+			# From Table 1 (p.13 in Tani's TOCT paper), it is easy to represent each of the output bits
+			# as a logic formula over 4 input variables by using, say, Karnaugh map,
+			# which consists of AND and NOT (and thus OR).
+			# Then just replace ANDs with Toffoli gates and and NOTs with X gates.
+
 			q0 = self.reg[t][0][0]
 			q1 = self.reg[t][0][1]
 			for i in range(1, self.n):

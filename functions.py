@@ -2,7 +2,7 @@ from cmath import exp
 import math
 
 #from qiskit import Aer
-from qiskit.mapper import two_qubit_kak
+from qiskit.quantum_info.synthesis import two_qubit_cnot_decompose
 import numpy as np
 
 from projectq.setups.decompositions import arb1qubit2rzandry as arb1q
@@ -39,7 +39,7 @@ def Vk(k, q0, q1):
                      		[u21*f, 0, u23*f, u24*f],
                      		[u31*f, 0, u33*f, u34*f],
                      		[0, u42*f, 0, 0]], dtype=complex)
-	circuit = two_qubit_kak(matrix_to_decompose)
+	circuit = two_qubit_cnot_decompose(matrix_to_decompose)
 	i = 0
 	while i < len(circuit):
 		if circuit[i]['name'] == 'u1':

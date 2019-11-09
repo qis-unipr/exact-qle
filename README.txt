@@ -2,15 +2,17 @@ Install SimulaQron with:
 
 pip3 install SimulaQron
 
-To setup the network, type:
+This version of exact-qle works with SimulaQron v.3.0.10
 
-simulaqron set backend projectq
-simulaqron set nodes-file /Users/micheleamoretti/Documents/SVILUPPO/exact-qle/config/Nodes.cfg
-simulaqron set app-file /Users/micheleamoretti/Documents/SVILUPPO/exact-qle/config/appNodes.cfg
-simulaqron set cqc-file /Users/micheleamoretti/Documents/SVILUPPO/exact-qle/config/cqcNodes.cfg
-simulaqron set vnode-file /Users/micheleamoretti/Documents/SVILUPPO/exact-qle/config/virtualNodes.cfg
-simulaqron set topology-file /Users/micheleamoretti/Documents/SVILUPPO/exact-qle/config/topology.json
-simulaqron set max-qubits 40
-simulaqron set max-registers 100
-simulaqron set recv-timeout 2.0
-simulaqron set log-level debug
+To setup the network, edit the .simulaqron.json file.
+
+See: https://softwarequtech.github.io/SimulaQron/html/ConfNodes.html
+
+To start SimulaQron:  
+
+simulaqron start --nodes node0,node1,node2
+
+To start QLE:
+
+./run.sh
+
